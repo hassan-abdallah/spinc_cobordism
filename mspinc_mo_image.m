@@ -1,6 +1,46 @@
+// MSpin^c_* calculator, version 1, by Hassan Abdallah.
+// This Magma program calculates an F_2-linear basis
+//  for the spin^c-cobordism ring modulo 2 and the Bott
+//  element, in a range of degrees, using element names 
+//  which make it possible
+//  to see the multiplicative structure. (It is this last
+//  point which is new. If you don't care about 
+//  the multiplicative structure on the spin^c-cobordism
+//  ring, you could get an F_2-linear basis more easily
+//  using Poincare series and the Anderson-Brown-Peterson
+//  splitting.)
+//
+// For explanation of what this code does, why it works,
+//  and results, see the paper "Products in spin^c 
+//  cobordism," joint with Andrew Salch.
+//
+// The output is a list of non-dyadic partitions. 
+//  Each such partition \lambda determines an element 
+//  P_\lambda in Thom's partition basis for the 
+//  unoriented bordism ring MO_*. The partitions in the 
+//  output yield an F_2-linear basis for the image of the
+//  map MSpin^c_* -> MO_* through the specified maximum
+//  grading degree. For example, [ 5, 5, 2, 2] 
+//  refers to Thom's element P_{5,5,2,2}, i.e., 
+//  x_5^2 times x_2^2, if you are thinking of MO_* as
+//  F_2[x_2,x_4,x_5,x_6,x_8,...].
+//  Along with each non-dyadic partition, a dual
+//  element in cohomology, written in terms of Stiefel-
+//  Whitney classes, is also displayed.
+//
+// The parameter which the user is most likely to
+//  modify is this one, max_def, which is the maximum 
+//  grading degree in which to compute the image of the
+//  map MSpin^c_* -> MO_* 
 max_deg:=24;
 
-R<w_2,w_3,w_4,w_5,w_6,w_7,w_8,w_9,w_10,w_11,w_12,w_13,w_14,w_15,w_16,w_17,w_18,w_19,w_20,w_21,w_22,w_23,w_24,w_25,w_26,w_27,w_28,w_29,w_30,w_31,w_32,w_33,w_34>
+// The next step is define the graded cohomology rings 
+//  of BSO and BSpin^c. 
+//  The relations are hardcoded and accurate through 
+//  degree 33. If you decide to set max_deg to some value
+//  greater than 33, you will need to append some new
+//  generators and new relations to the following lines.
+bso<w_2,w_3,w_4,w_5,w_6,w_7,w_8,w_9,w_10,w_11,w_12,w_13,w_14,w_15,w_16,w_17,w_18,w_19,w_20,w_21,w_22,w_23,w_24,w_25,w_26,w_27,w_28,w_29,w_30,w_31,w_32,w_33,w_34>
   := PolynomialRing(GF(2),[2..34]);
 
 spinc_rels := [w_3,w_5,w_9+w_2*w_7,w_2^7*w_3 + w_2^4*w_3^3 + w_2*w_3^5 + w_2^6*w_5 + w_3^4*w_5 + w_2^4*w_4*w_5 + w_4^3*w_5 + w_3*w_4*w_5^2 + w_2*w_5^3 + w_2^4*w_3*w_6 + w_3*w_4^2*w_6 + w_3^2*w_5*w_6 + w_2*w_3*w_6^2 + w_5*w_6^2 + w_2^5*w_7 + w_3^2*w_4*w_7 + w_2*w_4^2*w_7 + w_5^2*w_7 + w_2^2*w_6*w_7 + w_3*w_7^2 + w_3^3*w_8 + w_2^2*w_5*w_8 +  w_2^4*w_9 + w_2*w_3^2*w_9 + w_2^2*w_4*w_9 + w_4^2*w_9 + w_8*w_9 + w_2^2*w_3*w_10 + w_7*w_10 + w_2^3*w_11 + w_3^2*w_11 + w_6*w_11 + w_5*w_12 + w_2^2*w_13 + w_4*w_13 + w_3*w_14 + w_2*w_15 + w_17,w_2^15*w_3 + w_2^12*w_3^3 + w_2^9*w_3^5 + w_2^3*w_3^9 + w_3^11 + w_2^14*w_5 + w_2^8*w_3^4*w_5 + w_2^2*w_3^8*w_5 + w_2^12*w_4*w_5 + w_3^8*w_4*w_5 + w_2^8*w_4^3*w_5 + w_4^7*w_5 + w_2^8*w_3*w_4*w_5^2 +
@@ -23,35 +63,58 @@ spinc_rels := [w_3,w_5,w_9+w_2*w_7,w_2^7*w_3 + w_2^4*w_3^3 + w_2*w_3^5 + w_2^6*w
     w_3*w_6*w_12^2 + w_2*w_7*w_12^2 + w_9*w_12^2 + w_2^10*w_13 + w_2*w_3^6*w_13 + w_2^8*w_4*w_13 + w_2^2*w_3^4*w_4*w_13 + w_3^4*w_4^2*w_13 + w_2^4*w_4^3*w_13 + w_2^2*w_4^4*w_13 + w_4^5*w_13 + w_2^5*w_5^2*w_13 + w_5^4*w_13 + w_2^4*w_3^2*w_6*w_13 + w_2^4*w_6^2*w_13 + w_6*w_7^2*w_13 + w_2^6*w_8*w_13 + w_3^4*w_8*w_13 + w_6^2*w_8*w_13 + w_4*w_8^2*w_13 + w_2*w_9^2*w_13 + w_5^2*w_10*w_13 + w_10^2*w_13 + w_2^4*w_12*w_13 + w_4^2*w_12*w_13 + w_3*w_4*w_13^2 + w_2*w_5*w_13^2 + w_7*w_13^2 + w_2^8*w_3*w_14 + w_2^2*w_3^5*w_14 + w_2^4*w_3*w_4^2*w_14 + w_3*w_4^4*w_14 + w_2^4*w_3^2*w_5*w_14 + w_2^6*w_7*w_14 + w_3^4*w_7*w_14 + w_6^2*w_7*w_14 + w_5*w_7^2*w_14 + w_3*w_8^2*w_14 + w_5^2*w_9*w_14 + w_2^4*w_11*w_14 + w_4^2*w_11*w_14 + w_3^2*w_13*w_14 + w_2*w_3*w_14^2 + w_5*w_14^2 + w_2^9*w_15 + w_2^3*w_3^4*w_15 + w_3^6*w_15 + w_2^4*w_3^2*w_4*w_15 + w_2^5*w_4^2*w_15 + w_2*w_4^4*w_15 + w_2^4*w_5^2*w_15 + w_2^6*w_6*w_15 + w_3^4*w_6*w_15 + w_6^3*w_15 + w_4*w_7^2*w_15 + w_5^2*w_8*w_15 + w_2*w_8^2*w_15 + w_9^2*w_15 + w_2^4*w_10*w_15 + w_4^2*w_10*w_15 + w_3^2*w_12*w_15 + w_2^2*w_14*w_15 + w_3*w_15^2 + w_2^4*w_3^3*w_16 + w_2^6*w_5*w_16 + w_3^4*w_5*w_16 + w_5*w_6^2*w_16 + w_5^2*w_7*w_16 + w_3*w_7^2*w_16 + w_2^4*w_9*w_16 + w_4^2*w_9*w_16 + w_3^2*w_11*w_16 + w_2^2*w_13*w_16 + w_2^8*w_17 + w_2^5*w_3^2*w_17 + w_2^2*w_3^4*w_17 + w_2^6*w_4*w_17 + w_3^4*w_4*w_17 + w_2^4*w_4^2*w_17 + w_4^4*w_17 + w_5^2*w_6*w_17 + w_4*w_6^2*w_17 + w_2*w_7^2*w_17 + w_2^4*w_8*w_17 + w_4^2*w_8*w_17 + w_8^2*w_17 + w_3^2*w_10*w_17 + w_2^2*w_12*w_17 + w_16*w_17 + w_2^6*w_3*w_18 + w_3^5*w_18 + w_5^3*w_18 + w_3*w_6^2*w_18 + w_2^4*w_7*w_18 + w_4^2*w_7*w_18 + w_3^2*w_9*w_18 + w_2^2*w_11*w_18 + w_15*w_18]; 
 
 
-Q<w_2_0,w_3_0,w_4_0,w_5_0,w_6_0,w_7_0,w_8_0,w_9_0,w_10_0,w_11_0,w_12_0,w_13_0,w_14_0,w_15_0,w_16_0,w_17_0,w_18_0,w_19_0,w_20_0,w_21_0,w_22_0,w_23_0,w_24_0,w_25_0,w_26_0,w_27_0,w_28_0,w_29_0,w_30_0,w_31_0,w_32_0,w_33_0,w_34_0> := quo< R | spinc_rels>; 
+bspinc<w_2_0,w_3_0,w_4_0,w_5_0,w_6_0,w_7_0,w_8_0,w_9_0,w_10_0,w_11_0,w_12_0,w_13_0,w_14_0,w_15_0,w_16_0,w_17_0,w_18_0,w_19_0,w_20_0,w_21_0,w_22_0,w_23_0,w_24_0,w_25_0,w_26_0,w_27_0,w_28_0,w_29_0,w_30_0,w_31_0,w_32_0,w_33_0,w_34_0> := quo< bso | spinc_rels>; 
+
+bso_gens :=[w_2,w_3,w_4,w_5,w_6,w_7,w_8,w_9,w_10,w_11,w_12,w_13,w_14,w_15,w_16,w_17,w_18,w_19,w_20,w_21,w_22,w_23,w_24,w_25,w_26,w_27,w_28,w_29,w_30,w_31,w_32,w_33,w_34];
+
+bspinc_gens :=[w_2_0,w_3_0,w_4_0,w_5_0,w_6_0,w_7_0,w_8_0,w_9_0,w_10_0,w_11_0,w_12_0,w_13_0,w_14_0,w_15_0,w_16_0,w_17_0,w_18_0,w_19_0,w_20_0,w_21_0,w_22_0,w_23_0,w_24_0,w_25_0,w_26_0,w_27_0,w_28_0,w_29_0,w_30_0,w_31_0,w_32_0,w_33_0,w_34_0];
 
 
-ws := [R!1, R!0, w_2, w_3, w_4, w_5, w_6, w_7, w_8,
+ws := [bso!1, bso!0, w_2, w_3, w_4, w_5, w_6, w_7, w_8,
         w_9,w_10,w_11,w_12,w_13,w_14,w_15,w_16,w_17,w_18,w_19,w_20,w_21,w_22,w_23,w_24,w_25,w_26,w_27,w_28,w_29,w_30,w_31,w_32,w_33,w_34];
 
+
+// w(i) is the ith Stiefel-Whitney class, as an element of H^*(BSO;F_2).
 function w(i)
-  if i gt 34 then return R!0;
+  if i gt 34 then return bso!0;
   else return ws[i+1];
   end if;
 end function;
+
+// Now we define a function which implements 
+// the Wu formula for the effect of the 
+//  Steenrod square Sq^i on a Stiefel-Whitney class w_j. 
+// The output is the value of Sq^i w_j as an element of H^*(BSO; F_2)
+
 
 function Wu(i,j)
    return &+[ Binomial(t+j-i-1,t) * w(i-t)*w(j+t) 
               : t in [0..i]];
 	end function;
 
-P<t> := PolynomialRing(R);
+// We also define the the ring P, a polyonomial ring on a single 
+// generator t over H^*(BSO; F_2), and a homomorphism
+// SqT: H^*(BSO; F_2) -> P that is later
+// used when calculating all Steenrod squares on an element xx. 
 
-SqT := hom<R->P |
+
+P<t> := PolynomialRing(bso);
+
+SqT := hom<bso->P |
         [ &+[t^i * Wu(i,j) : i in [0..j]]
          : j in [2..34]]>;
 
+// Sqi(ii,xx) is Sq^ii applied to an element xx in H^*(BSO; F_2), where xx
+// is a sum of products of Stiefel-Whitney classes. 
+
 function Sqi(ii,xx)
   co := Coefficients(SqT(xx));
-  if ii ge #co then return R!0;
+  if ii ge #co then return bso!0;
   else return co[ii+1];
   end if;
 end function;
+
+// SqU(ii,xx) is Sq^ii applied to an element xx*U in H^*(MSO; F_2). Here U is the Thom class.
 
 function SqU(ii,xx)
     if xx eq 0 then return 0;
@@ -60,11 +123,15 @@ function SqU(ii,xx)
     end if;
 end function;
 
+// Qi(ii,xx) is the Milnor primitive Q_{ii+1} applied to an element xx*U in H^*(MSO; F_2). This is only implemented in the cases ii=1 and ii=2, i.e., Q_0 and Q_1, since that's what matters for a spectrum whose cohomology splits into copies of A and A//E(1), like MSpin^c. This function is not used in this script, but it is used in the script mspinc_mo_image_torsion.m for identifying 2-torsion summands in MSpin^c_*. 
+
 function Qi(ii,xx)
     if ii eq 1 then return SqU(1,xx);
     else return SqU(3,xx)+SqU(2,SqU(1,xx));
     end if;
 end function;
+
+// propogate(x) applies all Steenrod operations, i.e., composites of Steenrod squares, to an element x, through the specified max degree max_deg.
 
 function propogate(x) 
 d := max_deg-Degree(x);
@@ -73,8 +140,8 @@ master := [];
 ind := 1;
 m_ind := 1; 
 for i in [1..d] do
-        sq_val_0 := Evaluate(SqU(i,x),[w_2_0,w_3_0,w_4_0,w_5_0,w_6_0,w_7_0,w_8_0,w_9_0,w_10_0,w_11_0,w_12_0,w_13_0,w_14_0,w_15_0,w_16_0,w_17_0,w_18_0,w_19_0,w_20_0,w_21_0,w_22_0,w_23_0,w_24_0,w_25_0,w_26_0,w_27_0,w_28_0,w_29_0,w_30_0,w_31_0,w_32_0,w_33_0,w_34_0]);
-        sq_val := Evaluate(sq_val_0,[w_2,w_3,w_4,w_5,w_6,w_7,w_8,w_9,w_10,w_11,w_12,w_13,w_14,w_15,w_16,w_17,w_18,w_19,w_20,w_21,w_22,w_23,w_24,w_25,w_26,w_27,w_28,w_29,w_30,w_31,w_32,w_33,w_34]);
+        sq_val_0 := Evaluate(SqU(i,x),bspinc_gens);
+        sq_val := Evaluate(sq_val_0,bso_gens);
         if sq_val ne 0 then
         sq_im[ind] := sq_val;
         master[m_ind] := sq_val;
@@ -89,8 +156,8 @@ for i in [1..sq_im_len] do
         non_0 := 0;
         restart := # master;
         for j in [1..d] do
-                sq_val_0 := Evaluate(SqU(j,sq_im[i]),[w_2_0,w_3_0,w_4_0,w_5_0,w_6_0,w_7_0,w_8_0,w_9_0,w_10_0,w_11_0,w_12_0,w_13_0,w_14_0,w_15_0,w_16_0,w_17_0,w_18_0,w_19_0,w_20_0,w_21_0,w_22_0,w_23_0,w_24_0,w_25_0,w_26_0,w_27_0,w_28_0,w_29_0,w_30_0,w_31_0,w_32_0,w_33_0,w_34_0]);
-                sq_val := Evaluate(sq_val_0,[w_2,w_3,w_4,w_5,w_6,w_7,w_8,w_9,w_10,w_11,w_12,w_13,w_14,w_15,w_16,w_17,w_18,w_19,w_20,w_21,w_22,w_23,w_24,w_25,w_26,w_27,w_28,w_29,w_30,w_31,w_32,w_33,w_34]);
+                sq_val_0 := Evaluate(SqU(j,sq_im[i]),bspinc_gens);
+                sq_val := Evaluate(sq_val_0,bso_gens);
                 if sq_val ne 0 then
                 non_0 := non_0 + 1;
                 master[m_ind] := sq_val;
@@ -103,8 +170,8 @@ for i in [1..sq_im_len] do
                         restart := master_len;
                         d := max_deg-Degree(master[k]);
                         for l in [1..d] do
-                        sq_val_0 := Evaluate(SqU(l,master[k]),[w_2_0,w_3_0,w_4_0,w_5_0,w_6_0,w_7_0,w_8_0,w_9_0,w_10_0,w_11_0,w_12_0,w_13_0,w_14_0,w_15_0,w_16_0,w_17_0,w_18_0,w_19_0,w_20_0,w_21_0,w_22_0,w_23_0,w_24_0,w_25_0,w_26_0,w_27_0,w_28_0,w_29_0,w_30_0,w_31_0,w_32_0,w_33_0,w_34_0]);
-                        sq_val := Evaluate(sq_val_0,[w_2,w_3,w_4,w_5,w_6,w_7,w_8,w_9,w_10,w_11,w_12,w_13,w_14,w_15,w_16,w_17,w_18,w_19,w_20,w_21,w_22,w_23,w_24,w_25,w_26,w_27,w_28,w_29,w_30,w_31,w_32,w_33,w_34]);
+                        sq_val_0 := Evaluate(SqU(l,master[k]),bspinc_gens);
+                        sq_val := Evaluate(sq_val_0,bso_gens);
                         if sq_val ne 0 then
                         non_0 := non_0+1;
                         master[m_ind] := sq_val;
@@ -118,135 +185,16 @@ end for;
 return(master); 
 end function;
 
+// symm_base_change(deg) returns the list of polynomials P_\lambda for all non-dyadic partitions \lambda whose sum equals deg. See section 2.2 in our paper for explanation of the polynomials P_\lambda, i.e., the members of Thom's basis for the unoriented bordism ring.
 
-b := [ ];
-ind:=1;
-for i in [0..max_deg] do
-	len := # MonomialsOfWeightedDegree(R, i);
-	for j in [1..len] do 
-		 x := MonomialsOfWeightedDegree(R, i)[j];
-		 q_val := Evaluate(x,[w_2_0,w_3_0,w_4_0,w_5_0,w_6_0,w_7_0,w_8_0,w_9_0,w_10_0,w_11_0,w_12_0,w_13_0,w_14_0,w_15_0,w_16_0,w_17_0,w_18_0,w_19_0,w_20_0,w_21_0,w_22_0,w_23_0,w_24_0,w_25_0,w_26_0,w_27_0,w_28_0,w_29_0,w_30_0,w_31_0,w_32_0,w_33_0,w_34_0]);
-        	 r_val := Evaluate(q_val,[w_2,w_3,w_4,w_5,w_6,w_7,w_8,w_9,w_10,w_11,w_12,w_13,w_14,w_15,w_16,w_17,w_18,w_19,w_20,w_21,w_22,w_23,w_24,w_25,w_26,w_27,w_28,w_29,w_30,w_31,w_32,w_33,w_34]);  
-		if r_val ne 0 then 
- 		Append(~b, MonomialsOfWeightedDegree(R, i)[j]);
- 		ind:=ind+1; 
-		end if; 
-       	end for; 
-end for; 
+function symm_base_change(deg)
+        b := []; 
+        for i in [1..# Partitions(deg)] do
+                b[i] := &*[w(Partitions(deg)[i][j]) :j in [1..# Partitions(deg)[i]]];
 
-b_len := # b;
-print("Computing list D"); 
-master := [];
-for q in [1..b_len] do 
-percent_done := q/b_len; 
-print(percent_done); 
-prop_q := propogate(b[q]);
-for i in [1..# prop_q] do 
-Append(~master,prop_q[i]); 
-end for;
-end for; 
-// Add w_i's to master
-for i in [2..max_deg] do
-        master := Append(master,w(i));
-end for;
+        end for; 
 
-print("Finished with list D"); 
-master_deg := []; 
-for i in [1..max_deg] do 
-master_deg[i] := []; 
-end for; 
-
-for i in [1..# master] do
-Append(~master_deg[Degree(master[i])],master[i]);
-end for;
-
-for a in [2..max_deg] do 
-b_deg := [];
-ind_deg := 1;
-deg := a;
-b_deg := master_deg[a]; 
-
-vspace := VectorSpace(GF(2), # MonomialsOfWeightedDegree(R,deg)); 
-
-q := [];
-m_deg := MonomialsOfWeightedDegree(R,deg);
-for i in [1..# MonomialsOfWeightedDegree(R,deg)] do 
-	val_q := Evaluate(m_deg[i],[w_2_0,w_3_0,w_4_0,w_5_0,w_6_0,w_7_0,w_8_0,w_9_0,w_10_0,w_11_0,w_12_0,w_13_0,w_14_0,w_15_0,w_16_0,w_17_0,w_18_0,w_19_0,w_20_0,w_21_0,w_22_0,w_23_0,w_24_0,w_25_0,w_26_0,w_27_0,w_28_0,w_29_0,w_30_0,w_31_0,w_32_0,w_33_0,w_34_0]);
-	val_r := Evaluate(val_q,[w_2,w_3,w_4,w_5,w_6,w_7,w_8,w_9,w_10,w_11,w_12,w_13,w_14,w_15,w_16,w_17,w_18,w_19,w_20,w_21,w_22,w_23,w_24,w_25,w_26,w_27,w_28,w_29,w_30,w_31,w_32,w_33,w_34]);
-	if val_r ne m_deg[i] then 
-	Append(~b_deg,m_deg[i] + val_r);
-	end if;
-        //end if; 
-end for;
-
-basis_vspace := Basis(vspace);
-for i in [1..# b_deg] do 
-	q[i] := &+[vspace!0+basis_vspace[Position(MonomialsOfWeightedDegree(R,deg),Terms(b_deg[i])[j])] :j in [1..# Terms(b_deg[i])]];
-end for; 
-S := sub<vspace | q>;
-C := Complement(vspace,S);
-//print(C);
-basis_len := # Basis(C);
-if basis_len gt 0 then
-for p in [1..# Basis(C)] do
-r_val := &+[Basis(C)[p][i]*MonomialsOfWeightedDegree(R,deg)[i] :i in  [1..# MonomialsOfWeightedDegree(R,deg)]];
-//print(r_val);
-prop_r := propogate(r_val); 
-for v in [1..# prop_r] do
-	Append(~master_deg[Degree(prop_r[v])],prop_r[v]); 
-	//master := Append(master,prop_r[v]);
-end for;
-end for;
-end if;
-q_deg := quo<vspace | q>; 
-end for;
-
-
-
-R<w_1,w_2,w_3,w_4,w_5,w_6,w_7,w_8,w_9,w_10,w_11,w_12,w_13,w_14,w_15,w_16,w_17,w_18,w_19,w_20,w_21,w_22,w_23,w_24,w_25,w_26,w_27,w_28,w_29,w_30,w_31,w_32,w_33,w_34>
-  := PolynomialRing(Integers(),[1..34]);
-
-T<w1_0,w2_0,w3_0,w4_0,w5_0,w6_0,w7_0,w8_0,w9_0,w10_0,w11_0,w12_0,w13_0,w14_0,w15_0,w16_0,w17_0,w18_0,w19_0,w20_0,w21_0,w22_0,w23_0,w24_0,w25_0,w26_0,w27_0,w28_0,w29_0,w30_0\
-,w31_0,w32_0,w33_0,w34_0> := quo< R | w_1>;
-
-w_s := [R!1, R!0, w_1,w_2, w_3, w_4, w_5, w_6, w_7, w_8,
-        w_9,w_10,w_11,w_12,w_13,w_14,w_15,w_16,w_17,w_18,w_19,w_20,w_21,w_22,w_23,w_24,w_25,w_26,w_27,w_28,w_29,w_30,w_31,w_32,w_33,w_34];
-
-
-function w_(i)
-  if i gt 35 then return R!0;
-  else return w_s[i+1];
-  end if;
-end function;
-
-R_2<w_1,w_2,w_3,w_4,w_5,w_6,w_7,w_8,w_9,w_10,w_11,w_12,w_13,w_14,w_15,w_16,w_17,w_18,w_19,w_20,w_21,w_22,w_23,w_24,w_25,w_26,w_27,w_28,w_29,w_30,w_31,w_32,w_33,w_34>
-  := PolynomialRing(GF(2),[1..34]);
-
-
-w_s_2 := [R_2!1, R_2!0, w_1,w_2, w_3, w_4, w_5, w_6, w_7, w_8,
-        w_9,w_10,w_11,w_12,w_13,w_14,w_15,w_16,w_17,w_18,w_19,w_20,w_21,w_22,w_23,w_24,w_25,w_26,w_27,w_28,w_29,w_30,w_31,w_32,w_33,w_34];
-
-
-
-
-function w__2(i)
-  if i gt 35 then return R_2!0;
-  else return w_s_2[i+1];
-  end if;
-end function;
-
-
-function symm_base_change(deg,r)
-	b := []; 
-	b_2 := []; 
-	for i in [1..# Partitions(deg)] do 
-		b[i] := &*[w_(Partitions(deg)[i][j]+1) :j in [1..# Partitions(deg)[i]]];
-		b_2[i] := &*[w__2(Partitions(deg)[i][j]+1) :j in [1..# Partitions(deg)[i]]];
-
-	end for; 
-
-Z := Matrix(R,# Partitions(deg), 1, b); 
-Z_2 := Matrix(R_2, # Partitions(deg), 1, b_2); 
+Z := Matrix(bso,# Partitions(deg), 1, b); 
 tmat := MonomialToElementaryMatrix(deg);
 vals := [];
 
@@ -256,17 +204,19 @@ Append(~vals,tmat[i,j]);
 end for;
 end for;
 
-tmat_R := Matrix(R,# Partitions(deg),# Partitions(deg),vals);
-
-tmat_2 := Matrix(R_2,# Partitions(deg),# Partitions(deg),vals);
- 
-if r eq 1 then return(tmat_R*Z); 
-else return(tmat_2*Z_2);
-end if; 
-end function; 
+tmat_T := Matrix(bso,# Partitions(deg),# Partitions(deg),vals);
 
 
-function mspinc_generators(deg)
+return(tmat_T*Z);
+end function;
+
+// mspinc_mo_image(deg, D_n) returns the elements of MO_*
+//  in the image of the map MSpin^c_* \rightarrow MO_*,
+//  in terms of Thom's basis for MO_*. 
+//  Here deg is the desired degree, and D_n is a set
+//  of A-module primitives of H^n(MSpin^c; \mathbb{F}_{2})
+function mspinc_mo_image(deg, D_n)
+        // calculate all non-dyadic partitions of "deg" and store in "parts_nondy"
         parts := Partitions(deg);
         parts_nondy := [];
         gens := [];
@@ -275,43 +225,88 @@ function mspinc_generators(deg)
                 else Append(~parts_nondy, i);
                 end if;
                 end for;
-        base_polys := symm_base_change(deg,1);
 
 	rels := [];
-	for i in [1..# master] do
-        if Degree(master[i]) eq deg then Append(~rels,Evaluate(master[i],[w_2,w_3,w_4,w_5,w_6,w_7,w_8,w_9,w_10,w_11,w_12,w_13,w_14,w_15,w_16,w_17,w_18,w_19,w_20,w_21,w_22,w_23,w_24,w_25,w_26,w_27,w_28,w_29,w_30,w_31,w_32,w_33,w_34]));
+        for i in [1..# D_n] do
+        if Degree(D_n[i]) eq deg then Append(~rels,D_n[i]);
         end if;
-	end for;
+        end for;
+        
+        		T<t_2_0,t_3_0,t_4_0,t_5_0,t_6_0,t_7_0,t_8_0,t_9_0,t_10_0,t_11_0,t_12_0,t_13_0,t_14_0,t_15_0,t_16_0,t_17_0,t_18_0,t_19_0,t_20_0,t_21_0,t_22_0,t_23_0,t_24_0,t_25_0,t_26_0,t_27_0,t_28_0,t_29_0,t_30_0,t_31_0,t_32_0,t_33_0,t_34_0> := quo< bspinc | rels>;
 
-	for i in [1..# spinc_rels] do
-        Append(~rels,Evaluate(spinc_rels[i],[w_2,w_3,w_4,w_5,w_6,w_7,w_8,w_9,w_10,w_11,w_12,w_13,w_14,w_15,w_16,w_17,w_18,w_19,w_20,w_21,w_22,w_23,w_24,w_25,w_26,w_27,w_28,w_29,w_30,w_31,w_32,w_33,w_34]));
-	end for;
-
-	T<w_1_0,w_2_0,w_3_0,w_4_0,w_5_0,w_6_0,w_7_0,w_8_0,w_9_0,w_10_0,w_11_0,w_12_0,w_13_0,w_14_0,w_15_0,w_16_0,w_17_0,w_18_0,w_19_0,w_20_0,w_21_0,w_22_0,w_23_0,w_24_0,w_25_0,w_26_0,w_27_0,w_28_0,w_29_0,w_30_0,w_31_0,w_32_0,w_33_0,w_34_0> := quo< R | rels,w_1>;
-
-	
-        polys := [];
+        // For each nondyadic partition \lambda in parts_nondy, evaluate if P_\lambda(U)  is nonzero in H^n(MSpin^c;\mathbb{F}_{2})/D_n. If it is, then print the corresponding element in MO_* in terms of Thom's basis.
+	base_polys := symm_base_change(deg); 
         for i in [1..# parts_nondy] do
-        x:=base_polys[parts_nondy[i]];
-        val_t := Evaluate(x,[w1_0,w2_0,w3_0,w4_0,w5_0,w6_0,w7_0,w8_0,w9_0,w10_0,w11_0,w12_0,w13_0,w14_0,w15_0,w16_0,w17_0,w18_0,w19_0,w20_0,w21_0,w22_0,w23_0,w24_0,w25_0,w26_0,w27_0,w28_0,w29_0,w30_0,w31_0,w32_0,w33_0,w34_0]);
-        val_q := Evaluate(val_t,[w_1,w_2,w_3,w_4,w_5,w_6,w_7,w_8,w_9,w_10,w_11,w_12,w_13,w_14,w_15,w_16,w_17,w_18,w_19,w_20,w_21,w_22,w_23,w_24,w_25,w_26,w_27,w_28,w_29,w_30,w_31,   w_32,w_33,w_34]);
-        Append(~polys,val_r);
-	val_t := Evaluate(val_q,[w_1_0,w_2_0,w_3_0,w_4_0,w_5_0,w_6_0,w_7_0,w_8_0,w_9_0,w_10_0,w_11_0,w_12_0,w_13_0,w_14_0,w_15_0,w_16_0,w_17_0,w_18_0,w_19_0,w_20_0,w_21_0,w_22_0,w_23_0,w_24_0,w_25_0,w_26_0,w_27_0,w_28_0,w_29_0,w_30_0,w_31_0,w_32_0,w_33_0,w_34_0]);
-        val_tt := Evaluate(val_t,[w_1,w_2,w_3,w_4,w_5,w_6,w_7,w_8,w_9,w_10,w_11,w_12,w_13,w_14,w_15,w_16,w_17,w_18,w_19,w_20,w_21,w_22,w_23,w_24,w_25,w_26,w_27,w_28,w_29,w_30,w_31,w_32,w_33,w_34]);
-	if val_tt ne 0 then 
-	print(parts[parts_nondy[i]]); 
-	print(val_tt);
-	end if;  
+        x := base_polys[parts_nondy[i]];
+        val_t := Evaluate(x,[t_2_0,t_3_0,t_4_0,t_5_0,t_6_0,t_7_0,t_8_0,t_9_0,t_10_0,t_11_0,t_12_0,t_13_0,t_14_0,t_15_0,t_16_0,t_17_0,t_18_0,t_19_0,t_20_0,t_21_0,t_22_0,t_23_0,t_24_0,t_25_0,t_26_0,t_27_0,t_28_0,t_29_0,t_30_0,t_31_0,t_32_0,t_33_0,t_34_0]);
+        val_tt := Evaluate(val_t,bso_gens);
+        if val_tt ne 0 then
+        print(parts[parts_nondy[i]]);
+        print(val_tt);
+        end if;
         end for;
 return "";
 end function;
 
 
+// Initial step of induction: create list D of elements in the A-module generated by U
 
+D := [];
 
 for i in [2..max_deg] do 
-print(i);
-mspinc_generators(i);
+	if Evaluate(w(i),bspinc_gens) ne 0 then
+	Append(~D, w(i));
+	prop_i := propogate(w(i));
+	for j in [1..# prop_i] do 
+		Append(~D, prop_i[j]);
+	end for;
+	end if;
 end for; 
 
+// Loop for inductive steps of induction
+for a in [2..max_deg] do 
+
+b_deg := [];
+ind_deg := 1;
+deg := a;
+
+for i in [1..# D] do
+	if Degree(D[i]) eq deg then Append(~b_deg, D[i]);
+	end if;
+end for; 
+
+vspace := VectorSpace(GF(2), # MonomialsOfWeightedDegree(bso,deg)); 
+
+q := [];
+m_deg := MonomialsOfWeightedDegree(bso,deg);
+for i in [1..# MonomialsOfWeightedDegree(bso,deg)] do 
+	val_q := Evaluate(m_deg[i],bspinc_gens);
+	val_r := Evaluate(val_q,bso_gens);
+	if val_r ne m_deg[i] then 
+	Append(~b_deg,m_deg[i] + val_r);
+	end if;
+end for;
+
+// calculate F_2-linear basis B for H^n(MSpin^c;\mathbb{F}_{2})/D_n
+
+basis_vspace := Basis(vspace);
+for i in [1..# b_deg] do 
+	q[i] := &+[vspace!0+basis_vspace[Position(MonomialsOfWeightedDegree(bso,deg),Terms(b_deg[i])[j])] :j in [1..# Terms(b_deg[i])]];
+end for; 
+S := sub<vspace | q>;
+B := Complement(vspace,S);
+basis_len := # Basis(B);
+// If B is nonempty, output elements Y_\lambda corresponding to nonzero P_\lambda and apply Steenrod squares to update D (i.e. calculate D')
+if basis_len gt 0 then
+	mspinc_mo_image(a,D);
+	for p in [1..# Basis(B)] do
+		r_val := &+[Basis(B)[p][i]*MonomialsOfWeightedDegree(bso,deg)[i] :i in  [1..# MonomialsOfWeightedDegree(bso,deg)]];
+		prop_r := propogate(r_val); 
+	for v in [1..# prop_r] do
+	Append(~D,prop_r[v]); 
+end for;
+end for;
+end if;
+q_deg := quo<vspace | q>; 
+end for;
 exit;
