@@ -22,7 +22,7 @@
 //  Whitney classes, is also displayed.
 //
 // For comments on what the functions in this script 
-// do, see the file mspincc_mo_image.m 
+// do, see the file mspinc_mo_image.m 
 //
 // The parameter which the user is most likely to
 //  modify is this one, max_def, which is the maximum 
